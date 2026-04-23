@@ -1,0 +1,48 @@
+name: CI Pipeline
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: ecommerce_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -r ingestion/requirements.txt
+      - name: Lint with flake8
+        run: |
+          pip install flake8
+          flake8 ingestion/ tests/ --max-line-length=100 --ignore=E501,W293,E221,E231,E302,E401,E226,E225,E241,E128,E305,E701,E402
+      - name: Run Python tests
+        run: python -m pytest tests/ -v --tb=long
+      - name: Install dbt
+        run: pip install dbt-postgres
+      - name: Write dbt profiles
+        run: python ci_seed.py --profiles-only
+      - name: Seed raw tables
+        run: python ci_seed.py
+      - name: Run dbt
+        run: |
+          cd dbt_project/ecommerce_dbt
+          dbt run --target ci
+          dbt test --target ci
