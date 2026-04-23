@@ -1,4 +1,5 @@
-name: CI Pipeline
+python -c "
+content = '''name: CI Pipeline
 on:
   push:
     branches: [main, develop]
@@ -26,7 +27,7 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: \"3.11\"
       - name: Install dependencies
         run: pip install -r ingestion/requirements.txt
       - name: Lint with flake8
@@ -38,68 +39,16 @@ jobs:
       - name: Install dbt
         run: pip install dbt-postgres
       - name: Write dbt profiles
-        run: >
-          python -c
-          "import os;
-          os.makedirs(os.path.expanduser('~/.dbt'), exist_ok=True);
-          open(os.path.expanduser('~/.dbt/profiles.yml'), 'w').write('ecommerce_dbt:\n  target: ci\n  outputs:\n    ci:\n      type: postgres\n      host: localhost\n      user: postgres\n      password: password\n      port: 5432\n      dbname: ecommerce_test\n      schema: dbt_ci\n      threads: 2\n')"
-      - name: Create raw schema and seed test data
-        run: |
-          python -c "
-          import psycopg2
-          conn = psycopg2.connect(host='localhost', dbname='ecommerce_test', user='postgres', password='password', port=5432)
-          cur = conn.cursor()
-          cur.execute('CREATE SCHEMA IF NOT EXISTS raw;')
-          cur.execute('CREATE TABLE IF NOT EXISTS raw.raw_orders (order_id TEXT, customer_id TEXT, order_status TEXT, order_purchase_timestamp TEXT, order_approved_at TEXT, order_delivered_carrier_date TEXT, order_delivered_customer_date TEXT, order_estimated_delivery_date TEXT);')
-          cur.execute('CREATE TABLE IF NOT EXISTS raw.raw_order_items (order_id TEXT, order_item_id TEXT, product_id TEXT, seller_id TEXT, shipping_limit_date TEXT, price TEXT, freight_value TEXT);')
-          cur.execute('CREATE TABLE IF NOT EXISTS raw.raw_customers (customer_id TEXT, customer_unique_id TEXT, customer_zip_code_prefix TEXT, customer_city TEXT, customer_state TEXT);')
-          cur.execute('CREATE TABLE IF NOT EXISTS raw.raw_products (product_id TEXT, product_category_name TEXT, product_name_lenght TEXT, product_description_lenght TEXT, product_photos_qty TEXT, product_weight_g TEXT, product_length_cm TEXT, product_height_cm TEXT, product_width_cm TEXT);')
-          cur.execute('CREATE TABLE IF NOT EXISTS raw.raw_order_payments (order_id TEXT, payment_sequential TEXT, payment_type TEXT, payment_installments TEXT, payment_value TEXT);')
-          cur.execute('CREATE TABLE IF NOT EXISTS raw.raw_category_translation (product_category_name TEXT, product_category_name_english TEXT);')
-          cur.execute('CREATE TABLE IF NOT EXISTS raw.raw_order_reviews (review_id TEXT, order_id TEXT, review_score TEXT, review_creation_date TEXT, review_answer_timestamp TEXT);')
-          cur.execute('CREATE TABLE IF NOT EXISTS raw.raw_sellers (seller_id TEXT, seller_zip_code_prefix TEXT, seller_city TEXT, seller_state TEXT);')
-          conn.commit()
-          cur.close()
-          conn.close()
-          print('Done')
-          "
+        run: python ci_seed.py --profiles-only
+      - name: Seed raw tables
+        run: python ci_seed.py
       - name: Run dbt
         run: |
           cd dbt_project/ecommerce_dbt
           dbt run --target ci
           dbt test --target ci
-
-version: 2
- 
-models:
-  - name: stg_orders
-    columns:
-      - name: order_id
-        tests: [not_null, unique]
-      - name: order_status
-        tests:
-          - accepted_values:
-              values: [delivered, shipped, canceled, invoiced,
-                       processing, created, approved,
-                       unavailable]
- 
-  - name: mart_sales_summary
-    columns:
-      - name: order_id
-        tests: [not_null, unique]
-      - name: gross_order_value
-        tests: [not_null]
- 
-  - name: mart_product_performance
-    columns:
-      - name: category_en
-        tests: [not_null, unique]
-      - name: total_revenue
-        tests: [not_null]
- 
-  - name: mart_delivery_performance
-    columns:
-      - name: state
-        tests: [not_null, unique]
-      - name: avg_delivery_days
-        tests: [not_null]
+'''
+with open('.github/workflows/ci.yml', 'w') as f:
+    f.write(content)
+print('Done')
+"
