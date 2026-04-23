@@ -38,7 +38,11 @@ jobs:
       - name: Install dbt
         run: pip install dbt-postgres
       - name: Write dbt profiles
-        run: python -c "import os; os.makedirs(os.path.expanduser('~/.dbt'), exist_ok=True); open(os.path.expanduser('~/.dbt/profiles.yml'), 'w').write('ecommerce_dbt:\n  target: ci\n  outputs:\n    ci:\n      type: postgres\n      host: localhost\n      user: postgres\n      password: password\n      port: 5432\n      dbname: ecommerce_test\n      schema: dbt_ci\n      threads: 2\n')"
+        run: >
+          python -c
+          "import os;
+          os.makedirs(os.path.expanduser('~/.dbt'), exist_ok=True);
+          open(os.path.expanduser('~/.dbt/profiles.yml'), 'w').write('ecommerce_dbt:\n  target: ci\n  outputs:\n    ci:\n      type: postgres\n      host: localhost\n      user: postgres\n      password: password\n      port: 5432\n      dbname: ecommerce_test\n      schema: dbt_ci\n      threads: 2\n')"
       - name: Run dbt
         run: |
           cd dbt_project/ecommerce_dbt
