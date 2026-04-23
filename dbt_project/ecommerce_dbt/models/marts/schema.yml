@@ -1,0 +1,34 @@
+version: 2
+ 
+models:
+  - name: stg_orders
+    columns:
+      - name: order_id
+        tests: [not_null, unique]
+      - name: order_status
+        tests:
+          - accepted_values:
+              arguments:
+                values: [delivered, shipped, canceled, invoiced,
+                         processing, created, approved, unavailable]
+ 
+  - name: mart_sales_summary
+    columns:
+      - name: order_id
+        tests: [not_null, unique]
+      - name: gross_order_value
+        tests: [not_null]
+ 
+  - name: mart_product_performance
+    columns:
+      - name: category_en
+        tests: [not_null, unique]
+      - name: total_revenue
+        tests: [not_null]
+ 
+  - name: mart_delivery_performance
+    columns:
+      - name: state
+        tests: [not_null, unique]
+      - name: avg_delivery_days
+        tests: [not_null]

@@ -1,0 +1,23 @@
+# Raw data — never commit large CSV files to GitHub
+data/
+*.csv
+# Secrets
+.env
+ 
+# Python
+__pycache__/
+*.pyc
+.venv/
+ 
+# dbt
+dbt_project/target/
+dbt_project/dbt_packages/
+dbt_project/logs/
+E-Pipeline/
+Ecom-pipeline/
+Ecommerce-pipeline/
+Ecommerce/
+Pipeline/
+ecommerce-pipeline Poject/
+ecommerce-pipeline-P/
+logs/
