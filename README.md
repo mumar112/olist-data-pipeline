@@ -16,7 +16,6 @@ Questions my Dashboard Will Answer
 •	Which states have the most customers and highest order values?  
 •	What is the average delivery time and how does it vary by state?  
 •	What payment methods do customers prefer?  
-•	How do review scores correlate with delivery performance? 
 
 Tech Stack and Project Structure  
 
